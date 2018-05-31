@@ -2,13 +2,8 @@ package com.firejq;
 
 import org.bytedeco.javacpp.Loader;
 import org.bytedeco.javacpp.opencv_objdetect;
-import org.bytedeco.javacv.CanvasFrame;
 
-import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
-import javax.swing.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -42,7 +37,7 @@ public class AudioInputThread extends Thread {
 
 		// Preload the opencv_objdetect module to work around a known bug.
 		Loader.load(opencv_objdetect.class);
-		try (DatagramSocket dSocket = new DatagramSocket(Config.INPUT_PORT)) {
+		try (DatagramSocket dSocket = new DatagramSocket(Config.DEFAULT_PORT)) {
 
 
 			while (true) { //窗口是否关闭

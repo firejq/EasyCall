@@ -27,9 +27,12 @@ public class VideoOutputThread extends Thread {
 
 	private InetAddress remoteAddress;
 
-	public VideoOutputThread(String ipAddress) {
+	private int remotePort;
+
+	public VideoOutputThread(String ipAddress, int remotePort) {
 		try {
 			this.remoteAddress = InetAddress.getByName(ipAddress);
+			this.remotePort = remotePort;
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
@@ -74,6 +77,7 @@ public class VideoOutputThread extends Thread {
 			/* 摄像头开启成功，开始获取摄像头数据并使用 UDP 发送 */
 			Frame frame;
 			while ((frame = grabber.grab()) != null && canvas.isDisplayable()) {
+				// 显示本地摄像头画面
 				canvas.showImage(frame);
 
 				double g = grabber.getGamma();
@@ -82,7 +86,7 @@ public class VideoOutputThread extends Thread {
 						.getBufferedImage(frame,
 										  inverseGamma,
 										  false,
-										  null);
+										  null);//todo
 				byte [] content;
 				try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 					ImageIO.write(bImage, "jpg", out);
@@ -91,8 +95,8 @@ public class VideoOutputThread extends Thread {
 
 				DatagramPacket dPacket = new DatagramPacket(content,
 															content.length,
-															remoteAddress,
-															Config.INPUT_PORT);
+															this.remoteAddress,
+															this.remotePort);
 				dSocket.send(dPacket);
 				Thread.sleep(50); // 50毫秒刷新一次图像
 			}

@@ -2,16 +2,8 @@ package com.firejq;
 
 import org.bytedeco.javacpp.Loader;
 import org.bytedeco.javacpp.opencv_objdetect;
-import org.bytedeco.javacv.CanvasFrame;
-import org.bytedeco.javacv.Frame;
-import org.bytedeco.javacv.Java2DFrameConverter;
-import org.bytedeco.javacv.OpenCVFrameGrabber;
 
-import javax.imageio.ImageIO;
 import javax.sound.sampled.*;
-import javax.swing.*;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -73,7 +65,7 @@ public class AudioOutputThread extends Thread {
 				DatagramPacket dPacket = new DatagramPacket(audioBytes,
 															audioBytes.length,
 															remoteAddress,
-															Config.INPUT_PORT);
+															Config.DEFAULT_PORT);
 				// todo The message is larger than the maximum supported by the underlying transport: Datagram send failed
 				dSocket.send(dPacket);
 				Thread.sleep(50); // 50毫秒刷新一次音频

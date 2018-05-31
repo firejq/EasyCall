@@ -24,9 +24,12 @@ public class VideoInputThread extends Thread {
 
 	private InetAddress remoteAddress;
 
-	public VideoInputThread(String ipAddress) {
+	private int remotePort;
+
+	public VideoInputThread(String ipAddress, int remotePort) {
 		try {
 			this.remoteAddress = InetAddress.getByName(ipAddress);
+			this.remotePort = remotePort;
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
@@ -38,7 +41,7 @@ public class VideoInputThread extends Thread {
 
 		// Preload the opencv_objdetect module to work around a known bug.
 		Loader.load(opencv_objdetect.class);
-		try (DatagramSocket dSocket = new DatagramSocket(Config.INPUT_PORT)) {
+		try (DatagramSocket dSocket = new DatagramSocket(Config.DEFAULT_PORT)) {
 
 			// 新建一个窗口，显示对方摄像头的画面
 			CanvasFrame canvas = new CanvasFrame("对方");
@@ -50,7 +53,8 @@ public class VideoInputThread extends Thread {
 				DatagramPacket dPacket = new DatagramPacket(buf, 65507);
 				dSocket.receive(dPacket);
 
-				if (!dPacket.getAddress().equals(this.remoteAddress)) {
+				if (!dPacket.getAddress().equals(this.remoteAddress)
+						|| dPacket.getPort() != this.remotePort) {
 					continue;
 				}
 				ByteArrayInputStream bin = new ByteArrayInputStream(

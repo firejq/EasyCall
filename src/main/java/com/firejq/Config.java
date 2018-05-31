@@ -1,7 +1,5 @@
 package com.firejq;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -20,12 +18,12 @@ public class Config {
 				.getResourceAsStream("config.properties")) {
 			Properties properties = new Properties();
 			properties.load(inputStream);
-			Config.INPUT_PORT = Integer.parseInt(
-					(String) properties.getOrDefault("input-port",																   2333));
+			Config.DEFAULT_PORT = Integer.parseInt(
+					(String) properties.getOrDefault("port",																   2333));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public static int INPUT_PORT;
+	public static int DEFAULT_PORT;
 }
