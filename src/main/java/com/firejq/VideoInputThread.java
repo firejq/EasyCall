@@ -1,5 +1,7 @@
 package com.firejq;
 
+import org.bytedeco.javacpp.Loader;
+import org.bytedeco.javacpp.opencv_objdetect;
 import org.bytedeco.javacv.CanvasFrame;
 
 import javax.imageio.ImageIO;
@@ -11,8 +13,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
 
 /**
  * <p>Title: </p>
@@ -20,11 +20,11 @@ import java.nio.ByteBuffer;
  *
  * @author <a href="mailto:firejq@outlook.com">firejq</a>
  */
-public class ChatInputThread extends Thread {
+public class VideoInputThread extends Thread {
 
 	private InetAddress remoteAddress;
 
-	public ChatInputThread(String ipAddress) {
+	public VideoInputThread(String ipAddress) {
 		try {
 			this.remoteAddress = InetAddress.getByName(ipAddress);
 		} catch (UnknownHostException e) {
@@ -35,13 +35,16 @@ public class ChatInputThread extends Thread {
 	@Override
 	public void run() {
 		System.out.println("输入线程（看对方）启动");
+
+		// Preload the opencv_objdetect module to work around a known bug.
+		Loader.load(opencv_objdetect.class);
 		try (DatagramSocket dSocket = new DatagramSocket(Config.INPUT_PORT)) {
 
 			CanvasFrame canvas = new CanvasFrame("对方");//新建一个窗口
 			canvas.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 			canvas.setAlwaysOnTop(true);
 
-			while (true) {
+			while (canvas.isDisplayable()) { //窗口是否关闭
 				byte [] buf = new byte[65507];
 				DatagramPacket dPacket = new DatagramPacket(buf, 65507);
 				dSocket.receive(dPacket);
@@ -54,6 +57,8 @@ public class ChatInputThread extends Thread {
 				BufferedImage image = ImageIO.read(bin);
 				canvas.showImage(image);
 			}
+
+			canvas.dispose();
 
 		} catch (IOException e) {
 			e.printStackTrace();
