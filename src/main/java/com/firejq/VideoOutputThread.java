@@ -37,21 +37,25 @@ public class VideoOutputThread extends Thread {
 
 	@Override
 	public void run() {
-		System.out.println("输出线程（给对方看）启动");
+		System.out.println("视频输出线程（给对方看）启动");
 
 		// Preload the opencv_objdetect module to work around a known bug.
 		Loader.load(opencv_objdetect.class);
 		try (OpenCVFrameGrabber grabber = new OpenCVFrameGrabber(0);
 			 DatagramSocket dSocket = new DatagramSocket()) {
 
-			CanvasFrame canvas = new CanvasFrame("自己");//新建一个窗口
+			// 新建一个窗口，显示本地摄像头的画面（此处利用了硬件优化）
+			CanvasFrame canvas
+					= new CanvasFrame("自己",
+									  CanvasFrame.getDefaultGamma() /
+											  grabber.getGamma());
 			canvas.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 			canvas.setAlwaysOnTop(true);
 
 			/* 尝试开启摄像头 */
 			int tryOpen = 0; // 摄像头开启状态
 			try {
-				grabber.start(); // 开始获取摄像头数据
+				grabber.start(); // 尝试获取摄像头数据
 				tryOpen += 1;
 			} catch (org.bytedeco.javacv.FrameGrabber.Exception e1) {
 				try {
@@ -67,11 +71,9 @@ public class VideoOutputThread extends Thread {
 				return;
 			}
 
-			while (canvas.isDisplayable()) {
-				Frame frame = grabber.grab();
-				if (frame.image == null) {
-					continue;
-				}
+			/* 摄像头开启成功，开始获取摄像头数据并使用 UDP 发送 */
+			Frame frame;
+			while ((frame = grabber.grab()) != null && canvas.isDisplayable()) {
 				canvas.showImage(frame);
 
 				double g = grabber.getGamma();

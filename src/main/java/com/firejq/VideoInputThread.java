@@ -34,13 +34,14 @@ public class VideoInputThread extends Thread {
 
 	@Override
 	public void run() {
-		System.out.println("输入线程（看对方）启动");
+		System.out.println("视频输入线程（看对方）启动");
 
 		// Preload the opencv_objdetect module to work around a known bug.
 		Loader.load(opencv_objdetect.class);
 		try (DatagramSocket dSocket = new DatagramSocket(Config.INPUT_PORT)) {
 
-			CanvasFrame canvas = new CanvasFrame("对方");//新建一个窗口
+			// 新建一个窗口，显示对方摄像头的画面
+			CanvasFrame canvas = new CanvasFrame("对方");
 			canvas.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 			canvas.setAlwaysOnTop(true);
 
