@@ -1,9 +1,8 @@
 package com.firejq;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.*;
+import java.util.HashSet;
 import java.util.Scanner;
 
 /**
@@ -20,11 +19,42 @@ public class App {
 
 	private static final String REJECT_STRING = "no";
 
+	private static final String ONLINE_STRING = "online";
+
+	private static final String BROCAST_ADDRESS = "228.5.6.7";
+
 	/**
 	 * 等待连接
 	 */
 	public void waitFor() {
 		System.out.println("Wait for request...");
+
+		// 广播在线信息
+		new Thread(() -> {
+			try (MulticastSocket mutiSocket
+						 = new MulticastSocket(Config.DEFAULT_PORT)) {
+
+				InetAddress group = InetAddress.getByName(BROCAST_ADDRESS);
+				mutiSocket.setTimeToLive(1); // 设置广播组地址
+				mutiSocket.joinGroup(group); // 加入组播地址
+				mutiSocket.setLoopbackMode(false); // 设置发送的数据报会回送到自身
+
+				byte [] buffer = ONLINE_STRING.getBytes("UTF-8");
+				DatagramPacket packet
+						= new DatagramPacket(buffer,
+											 buffer.length,
+											 group,
+											 Config.DEFAULT_PORT);
+				while (true) {
+					mutiSocket.send(packet);
+					Thread.sleep(1000L);
+				}
+				// mutiSocket.leaveGroup(group);
+			} catch (IOException | InterruptedException e) {
+				e.printStackTrace();
+			}
+		}).start();
+
 		try (DatagramSocket inSocket = new DatagramSocket(Config.DEFAULT_PORT)) {
 			// 等待连接
 			while (true) {
@@ -33,6 +63,7 @@ public class App {
 															   respBytes.length);
 				inSocket.receive(respPacket);
 				if (new String(respPacket.getData(), "UTF-8")
+						.trim()
 						.equals(REQ_STRING)) {
 					String remoteAddress = respPacket.getAddress()
 													 .getHostAddress();
@@ -106,6 +137,39 @@ public class App {
 		}
 	}
 
+	/**
+	 * 列出待连接的所有App客户端信息
+	 */
+	public void list() {
+		HashSet<SocketAddress> clientSet = new HashSet<>();
+		try (MulticastSocket mutiSocket
+					 = new MulticastSocket(Config.DEFAULT_PORT)) {
+			InetAddress group = InetAddress.getByName(BROCAST_ADDRESS);
+			mutiSocket.setTimeToLive(1); // 设置广播组地址
+			mutiSocket.joinGroup(group); // 加入组播地址
+
+			while (true) {
+				byte[] buffer = new byte[1024];
+				DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+				mutiSocket.receive(packet);
+				if (new String(packet.getData(), "UTF-8")
+						.trim()
+						.equals(ONLINE_STRING)) {
+					InetSocketAddress socketAddress
+							= new InetSocketAddress(packet.getAddress(),
+													packet.getPort());
+					if (clientSet.add(socketAddress)) {
+						System.out.println(socketAddress.getAddress()
+														.getHostAddress() + " "
+												   + socketAddress.getPort());
+					}
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 
 	/**
 	 * 发送AGREE标识到指定地址
@@ -168,25 +232,27 @@ public class App {
 		App app = new App();
 
 		if ((args.length == 1 || args.length == 2)
-				&& (args[0].equals("wait") || args[0].equals("list"))) {
+				&& (args[0].trim().equals("wait")
+				|| args[0].trim().equals("list"))) {
 			if (args.length == 2
 					&& Integer.parseInt(args[1]) > 0
 					&& Integer.parseInt(args[1]) < 65535) {
 				Config.DEFAULT_PORT = Integer.parseInt(args[1]);
 			}
 
-			if (args[0].equals("wait")) {
+			if (args[0].trim().equals("wait")) {
 				// eg: app.jar wait 2333
 				app.waitFor();
 				return;
 			}
-			if (args[0].equals("list")) {
+			if (args[0].trim().equals("list")) {
 				// eg: app.jar list 2333
-
+				app.list();
+				return;
 			}
 		}
 
-		if (args.length >= 3 && args[0].equals("request")) {
+		if (args.length >= 3 && args[0].trim().equals("request")) {
 			// eg: app.jar request 2333 192.168.1.100 6666
 			if (args.length == 3) {
 				app.requestFor(args[1], Integer.parseInt(args[2]));
